@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Test de vigilance psychomotrice (PVT-B) — 3 minutes</title>
+<style>
+  :root {
+    --ground: #15171b;
+    --ground-2: #1d2026;
+    --line: #32363f;
+    --text: #e6e3dc;
+    --mute: #8f8f8a;
+    --signal: #b3261e;
+    --signal-dim: #7d1a15;
+    --counter: #f2c230;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background: var(--ground); color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  body { overscroll-behavior: none; }
+  .num { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-variant-numeric: tabular-nums; }
+
+  .wrap { max-width: 32rem; margin: 0 auto; padding: 2.4rem 1.4rem 3.2rem; }
+  h1 { font-size: 1.4rem; line-height: 1.25; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 0.3rem; }
+  .sub { color: var(--mute); font-size: 0.95rem; margin: 0 0 1.9rem; }
+  p { line-height: 1.6; font-size: 0.98rem; }
+
+  .preview { background: var(--signal); border-radius: 3px; height: 5.6rem; display: grid; place-items: center; margin: 0 0 1.5rem; }
+  .preview span { color: var(--counter); font-size: 2rem; letter-spacing: 0.06em; }
+
+  .rules { margin: 0 0 1.8rem; padding: 0; list-style: none; border-top: 1px solid var(--line); }
+  .rules li { border-bottom: 1px solid var(--line); padding: 0.75rem 0; font-size: 0.97rem; line-height: 1.5; }
+  .rules li b { color: var(--counter); font-weight: 600; }
+
+  .sleep { display: block; margin: 0 0 1.6rem; }
+  .sleep span { display: block; margin-bottom: 0.5rem; font-size: 0.97rem; }
+  .sleep small { display: block; color: var(--mute); font-size: 0.85rem; margin-top: 0.4rem; }
+  input[type=number] {
+    background: var(--ground-2); border: 1px solid var(--line); border-radius: 3px;
+    color: var(--text); font: inherit; padding: 0.6rem 0.7rem; width: 6.5rem;
+  }
+
+  button {
+    font: inherit; font-weight: 600; cursor: pointer; width: 100%;
+    background: var(--counter); color: #1a1a17; border: 0; border-radius: 3px; padding: 0.95rem 1.4rem;
+  }
+  button.quiet { background: transparent; color: var(--text); border: 1px solid var(--line); font-weight: 500; }
+  :focus-visible { outline: 2px solid var(--counter); outline-offset: 2px; }
+
+  .note { color: var(--mute); font-size: 0.85rem; line-height: 1.55; }
+  hr { border: 0; border-top: 1px solid var(--line); margin: 2rem 0 1.3rem; }
+
+  /* ---- countdown + test ---- */
+  #test { position: fixed; inset: 0; display: none; padding: 0.7rem; }
+  #test.on { display: block; }
+  #box {
+    position: absolute; inset: 0.7rem 0.7rem 2.6rem;
+    background: var(--signal); border-radius: 3px; display: grid; place-items: center;
+    touch-action: manipulation; user-select: none; -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent; cursor: pointer;
+  }
+  #box.warmup { background: var(--signal-dim); }
+  #counter { color: var(--counter); font-size: clamp(3rem, 17vw, 7rem); letter-spacing: 0.04em; min-height: 1.1em; }
+  #hint { position: absolute; bottom: 12%; color: rgba(255,255,255,.72); font-size: 0.95rem; }
+  #clock { position: absolute; left: 0.9rem; right: 0.9rem; bottom: 0.6rem; color: var(--mute); font-size: 0.8rem; display: flex; justify-content: space-between; }
+  #bar { position: absolute; left: 0.7rem; bottom: 2rem; height: 2px; background: var(--signal-dim); }
+
+  /* ---- results ---- */
+  .rows { border-top: 1px solid var(--line); margin: 1.5rem 0 1.8rem; }
+  .row { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; padding: 0.8rem 0; border-bottom: 1px solid var(--line); }
+  .row .k { font-size: 0.95rem; }
+  .row .k em { display: block; font-style: normal; color: var(--mute); font-size: 0.82rem; margin-top: 0.15rem; }
+  .row .v { font-size: 1.35rem; white-space: nowrap; }
+  .row .v u { text-decoration: none; color: var(--mute); font-size: 0.8rem; margin-left: 0.15rem; }
+  .row.key .v { color: var(--counter); }
+  .btns { display: flex; flex-direction: column; gap: 0.6rem; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<main id="start" class="wrap">
+  <div class="preview" aria-hidden="true"><span class="num">0</span></div>
+
+  <h1>Test de vigilance</h1>
+  <p class="sub">PVT-B — 3 minutes, sur cet écran</p>
+
+  <ul class="rules">
+    <li>La boîte rouge reste affichée. <b>Touchez l'écran dès qu'un compteur jaune apparaît.</b></li>
+    <li>Le compteur s'arrête sur votre temps, puis vous attendez le suivant.</li>
+    <li>Ne touchez rien quand il n'y a pas de compteur.</li>
+    <li>Posez le téléphone en main, silence coupé, personne à côté.</li>
+    <li>Trois minutes sans interruption : ne lancez pas le test si vous risquez d'être dérangé.</li>
+  </ul>
+
+  <label class="sleep">
+    <span>Heures dormies la nuit dernière <span style="color:var(--mute)">(facultatif)</span></span>
+    <input type="number" id="sleep" min="0" max="16" step="0.5" inputmode="decimal" placeholder="6,5">
+    <small>Réaffiché à côté de vos résultats. Rien n'est enregistré.</small>
+  </label>
+
+  <button id="go">Commencer</button>
+
+  <hr>
+  <p class="note">Aucune donnée n'est enregistrée ni envoyée. Tout disparaît si vous rechargez la page.</p>
+  <p class="note">Protocole du PVT-B tel que publié par Basner, Mollicone &amp; Dinges (2011), d'après le PVT de Dinges &amp; Powell (1985) : 3 minutes, intervalles de 0 à 3 secondes, décrochage au-delà de 355 ms. C'est la durée validée contre le PVT de référence de 10 minutes, et celle utilisée jusque dans la Station spatiale internationale.</p>
+  <p class="note">Les temps mesurés dans un navigateur incluent la latence de l'appareil : comparez l'évolution d'une même personne, pas deux téléphones entre eux.</p>
+</main>
+
+<div id="test" aria-hidden="true">
+  <div id="box" class="warmup" role="button" tabindex="0" aria-label="Zone de réponse : touchez dès qu'un compteur apparaît">
+    <div id="counter" class="num"></div>
+    <div id="hint"></div>
+  </div>
+  <div id="bar"></div>
+  <div id="clock"><span id="left" class="num"></span><span id="cnt" class="num"></span></div>
+</div>
+
+<main id="res" class="wrap hidden">
+  <h1>Vos résultats</h1>
+  <p class="sub" id="res-sub"></p>
+  <div class="rows" id="rows"></div>
+  <p class="note" id="res-note"></p>
+  <div class="btns">
+    <button class="quiet" id="copy">Copier mes résultats</button>
+    <button class="quiet" id="again">Refaire le test</button>
+  </div>
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  var DURATION = 180000;  // 3 min — durée du PVT-B publié
+  var LAPSE    = 355;     // seuil de décrochage du PVT-B
+  var MIN_RT   = 100;     // en dessous : faux départ
+  var MAX_WAIT = 30000;   // absence de réponse
+  var FEEDBACK = 1000;
+  var DELAY_MAX = 3000;
+  var COUNTDOWN = 3;      // départ synchronisé pour un groupe
+
+  var elStart = document.getElementById("start");
+  var elTest  = document.getElementById("test");
+  var elRes   = document.getElementById("res");
+  var box     = document.getElementById("box");
+  var counter = document.getElementById("counter");
+  var hint    = document.getElementById("hint");
+  var bar     = document.getElementById("bar");
+  var left    = document.getElementById("left");
+  var cnt     = document.getElementById("cnt");
+
+  var t0 = 0, trials = [], state = "idle", onsetAt = 0;
+  var timer = null, raf = null, wake = null, sleepH = "";
+
+  function now() { return performance.now(); }
+  function fmt(ms) {
+    var t = Math.max(0, Math.ceil(ms / 1000));
+    return Math.floor(t / 60) + ":" + ("0" + (t % 60)).slice(-2);
+  }
+  function clear() { if (timer) { clearTimeout(timer); timer = null; } }
+
+  function paint() {
+    var elapsed = now() - t0;
+    left.textContent = fmt(DURATION - elapsed);
+    cnt.textContent = trials.length + (trials.length === 1 ? " essai" : " essais");
+    bar.style.width = "calc((100% - 1.4rem) * " + Math.min(1, elapsed / DURATION) + ")";
+    if (state === "stimulus") { counter.textContent = Math.floor((now() - onsetAt) / 50) * 50; }
+    raf = requestAnimationFrame(paint);
+  }
+
+  function countdown(n) {
+    if (n === 0) {
+      box.classList.remove("warmup");
+      hint.textContent = "";
+      counter.textContent = "";
+      t0 = now();
+      raf = requestAnimationFrame(paint);
+      nextTrial();
+      return;
+    }
+    counter.textContent = n;
+    hint.textContent = "Prêt ?";
+    timer = setTimeout(function () { countdown(n - 1); }, 1000);
+  }
+
+  function nextTrial() {
+    if (now() - t0 >= DURATION) { return finish(); }
+    state = "delay";
+    counter.textContent = "";
+    clear();
+    timer = setTimeout(showStimulus, Math.random() * DELAY_MAX);
+  }
+
+  function showStimulus() {
+    state = "stimulus";
+    onsetAt = now();
+    counter.textContent = "0";
+    clear();
+    timer = setTimeout(function () {
+      trials.push({ type: "nores", rt: MAX_WAIT });
+      state = "feedback";
+      counter.textContent = "—";
+      clear();
+      timer = setTimeout(nextTrial, FEEDBACK);
+    }, MAX_WAIT);
+  }
+
+  function respond() {
+    if (state === "delay") {
+      trials.push({ type: "early", rt: null });
+      state = "feedback";
+      counter.textContent = "\u00b7";
+      clear();
+      timer = setTimeout(nextTrial, FEEDBACK);
+      return;
+    }
+    if (state !== "stimulus") { return; }
+    var rt = now() - onsetAt;
+    clear();
+    if (rt < MIN_RT) {
+      trials.push({ type: "early", rt: null });
+      counter.textContent = "\u00b7";
+    } else {
+      trials.push({ type: "valid", rt: rt });
+      counter.textContent = Math.round(rt);
+    }
+    state = "feedback";
+    timer = setTimeout(nextTrial, FEEDBACK);
+  }
+
+  box.addEventListener("pointerdown", function (e) { e.preventDefault(); respond(); });
+  document.addEventListener("keydown", function (e) {
+    if (elTest.classList.contains("on") && (e.key === " " || e.key === "Enter")) { e.preventDefault(); respond(); }
+  });
+
+  document.getElementById("go").addEventListener("click", function () {
+    var s = document.getElementById("sleep").value;
+    sleepH = s ? String(s).replace(".", ",") : "";
+    trials = [];
+    state = "warmup";
+    elStart.classList.add("hidden");
+    elRes.classList.add("hidden");
+    elTest.classList.add("on");
+    elTest.setAttribute("aria-hidden", "false");
+    box.classList.add("warmup");
+    left.textContent = fmt(DURATION);
+    cnt.textContent = "0 essai";
+    bar.style.width = "0";
+    if (navigator.wakeLock) { navigator.wakeLock.request("screen").then(function (w) { wake = w; }, function () {}); }
+    box.focus({ preventScroll: true });
+    countdown(COUNTDOWN);
+  });
+
+  function mean(a) { return a.reduce(function (x, y) { return x + y; }, 0) / a.length; }
+
+  function finish() {
+    state = "done";
+    clear();
+    if (raf) { cancelAnimationFrame(raf); raf = null; }
+    if (wake) { try { wake.release(); } catch (e) {} wake = null; }
+    elTest.classList.remove("on");
+    elTest.setAttribute("aria-hidden", "true");
+    elRes.classList.remove("hidden");
+    window.scrollTo(0, 0);
+
+    var valid = trials.filter(function (t) { return t.type === "valid"; });
+    var rts = valid.map(function (t) { return t.rt; });
+    var early = trials.filter(function (t) { return t.type === "early"; }).length;
+    var lapses = trials.filter(function (t) {
+      return t.type === "nores" || (t.type === "valid" && t.rt > LAPSE);
+    }).length;
+    var sorted = rts.slice().sort(function (a, b) { return b - a; });
+    var slow = sorted.slice(0, Math.max(1, Math.ceil(sorted.length * 0.1)));
+    var score = trials.length ? Math.round((1 - (early + lapses) / trials.length) * 100) : 0;
+    var m = rts.length ? Math.round(mean(rts)) : null;
+    var sl = rts.length ? Math.round(mean(slow)) : null;
+
+    document.getElementById("res-sub").textContent =
+      "PVT-B, 3 minutes" + (sleepH ? " · " + sleepH + " h de sommeil déclarées" : "");
+
+    var rows = [
+      ["Décrochages", "Réponses au-delà de " + LAPSE + " ms, ou absentes. C'est la mesure la plus sensible au manque de sommeil.", lapses, "", true],
+      ["Temps de réaction moyen", "Sur les " + valid.length + " réponses valides", m === null ? "—" : m, "ms", false],
+      ["Les 10 % les plus lents", "La moyenne de vos réponses les plus lentes", sl === null ? "—" : sl, "ms", false],
+      ["Faux départs", "Réponses avant le compteur, ou plus rapides que 100 ms", early, "", false],
+      ["Essais", "Nombre de compteurs présentés", trials.length, "", false],
+      ["Score global", "1 − (faux départs + décrochages) ÷ essais", score, "%", false]
+    ];
+    document.getElementById("rows").innerHTML = rows.map(function (r) {
+      return '<div class="row' + (r[4] ? " key" : "") + '">' +
+        '<span class="k">' + r[0] + '<em>' + r[1] + '</em></span>' +
+        '<span class="v num">' + r[2] + (r[3] ? '<u>' + r[3] + '</u>' : '') + '</span></div>';
+    }).join("");
+
+    document.getElementById("res-note").textContent =
+      "Une mesure unique reste sensible à l'appareil, à la motivation et à l'habitude du test : ce n'est pas un diagnostic. Ce qui s'interprète, c'est l'écart entre deux moments chez une même personne, et la répartition dans un groupe. À titre de repère, un groupe témoin reposé se situe autour de 250 ms de temps de réaction moyen avec moins d'un décrochage.";
+
+    window.__pvt = { lapses: lapses, mean: m, slow: sl, early: early, trials: trials.length, score: score, sleep: sleepH };
+  }
+
+  document.getElementById("copy").addEventListener("click", function () {
+    var d = window.__pvt, btn = this;
+    var txt = "PVT-B 3 min" + (d.sleep ? " · sommeil " + d.sleep + " h" : "") +
+      " · décrochages " + d.lapses + " (>" + LAPSE + " ms)" +
+      " · TR moyen " + d.mean + " ms" +
+      " · 10 % plus lents " + d.slow + " ms" +
+      " · faux départs " + d.early +
+      " · essais " + d.trials +
+      " · score " + d.score + " %";
+    var done = function () { btn.textContent = "Copié"; setTimeout(function () { btn.textContent = "Copier mes résultats"; }, 1800); };
+    if (navigator.clipboard) { navigator.clipboard.writeText(txt).then(done, function () { btn.textContent = txt; }); }
+    else { btn.textContent = txt; }
+  });
+
+  document.getElementById("again").addEventListener("click", function () {
+    elRes.classList.add("hidden");
+    elStart.classList.remove("hidden");
+    window.scrollTo(0, 0);
+  });
+})();
+</script>
+</body>
+</html>
